@@ -9,6 +9,7 @@ import streamlit as st
 import ollama
 import scraper_manager
 import auth
+import builtin_engine
 
 # Accessible to all authenticated users
 user = auth.get_current_user() or {}
@@ -104,9 +105,20 @@ llama_params = st.session_state.get("llama3_params", {
 
 # Sidebar settings specific to AI Assistant
 with st.sidebar:
-    st.subheader("🤖 Active Model Profile")
-    st.markdown(f"**Model:** `{llama_params.get('selected_model', 'llama3:latest')}`")
-    st.caption(f"Temp: `{llama_params.get('temperature', 0.2)}` • Context: `{llama_params.get('context_window', 8192)}` • Top-P: `{llama_params.get('top_p', 0.9)}`")
+    standalone_active = False
+    try:
+        if hasattr(st, "secrets") and st.secrets.get("STANDALONE_MODE", False):
+            standalone_active = True
+    except Exception:
+        pass
+
+    st.subheader("🤖 Active Intelligence Engine")
+    if standalone_active:
+        st.markdown("**Engine:** `Built-in Deluge Intelligence`")
+        st.caption("⚡ Offline & Standalone • 738+ Deluge Docs Grounded • Zero Latency")
+    else:
+        st.markdown(f"**Model:** `{llama_params.get('selected_model', 'llama3:8b')}`")
+        st.caption(f"Temp: `{llama_params.get('temperature', 0.2)}` • Context: `{llama_params.get('context_window', 4096)}` • Top-P: `{llama_params.get('top_p', 0.9)}`")
 
     # RAG Context injection toggle
     datasets = scraper_manager.get_available_datasets()
@@ -198,52 +210,64 @@ if active_prompt:
     payload.extend(st.session_state.assistant_messages)
 
     with st.chat_message("assistant"):
+        standalone_mode = False
         try:
-            model_to_use = llama_params.get("selected_model", "llama3:8b")
-            host_to_use = llama_params.get("ollama_host", "http://localhost:11434")
-            try:
-                if hasattr(st, "secrets") and "OLLAMA_HOST" in st.secrets:
-                    host_to_use = st.secrets["OLLAMA_HOST"]
-            except Exception:
-                pass
+            if hasattr(st, "secrets") and st.secrets.get("STANDALONE_MODE", False):
+                standalone_mode = True
+        except Exception:
+            pass
 
-            options_payload = {
-                "temperature": float(llama_params.get("temperature", 0.2)),
-                "top_p": float(llama_params.get("top_p", 0.9)),
-                "repeat_penalty": float(llama_params.get("repeat_penalty", 1.15)),
-                "num_predict": int(llama_params.get("num_predict", 1536)),
-                "num_ctx": int(llama_params.get("context_window", 4096)),
-            }
+        model_to_use = llama_params.get("selected_model", "llama3:8b")
+        host_to_use = llama_params.get("ollama_host", "http://localhost:11434")
+        try:
+            if hasattr(st, "secrets") and "OLLAMA_HOST" in st.secrets:
+                host_to_use = st.secrets["OLLAMA_HOST"]
+        except Exception:
+            pass
 
-            client = ollama.Client(host=host_to_use)
+        # 1. If standalone mode is configured or host is omitted, use built-in engine directly
+        if standalone_mode or not host_to_use or host_to_use.strip() == "":
+            full_reply = st.write_stream(builtin_engine.stream_built_in_response(active_prompt))
+            st.session_state.assistant_messages.append({"role": "assistant", "content": full_reply})
+        else:
+            # 2. Attempt Ollama inference with graceful fallback to built-in engine
             try:
-                response_stream = client.chat(
-                    model=model_to_use,
-                    messages=payload,
-                    options=options_payload,
-                    stream=True
-                )
-            except ollama.ResponseError as err:
-                if "not found" in str(err).lower() and model_to_use == "llama3:8b":
+                options_payload = {
+                    "temperature": float(llama_params.get("temperature", 0.2)),
+                    "top_p": float(llama_params.get("top_p", 0.9)),
+                    "repeat_penalty": float(llama_params.get("repeat_penalty", 1.15)),
+                    "num_predict": int(llama_params.get("num_predict", 1536)),
+                    "num_ctx": int(llama_params.get("context_window", 4096)),
+                }
+
+                client = ollama.Client(host=host_to_use)
+                try:
                     response_stream = client.chat(
-                        model="llama3",
+                        model=model_to_use,
                         messages=payload,
                         options=options_payload,
                         stream=True
                     )
-                else:
-                    raise err
+                except ollama.ResponseError as err:
+                    if "not found" in str(err).lower() and model_to_use == "llama3:8b":
+                        response_stream = client.chat(
+                            model="llama3",
+                            messages=payload,
+                            options=options_payload,
+                            stream=True
+                        )
+                    else:
+                        raise err
 
-            def stream_gen():
-                for chunk in response_stream:
-                    yield chunk["message"]["content"]
+                def stream_gen():
+                    for chunk in response_stream:
+                        yield chunk["message"]["content"]
 
-            full_reply = st.write_stream(stream_gen())
-            st.session_state.assistant_messages.append({"role": "assistant", "content": full_reply})
+                full_reply = st.write_stream(stream_gen())
+                st.session_state.assistant_messages.append({"role": "assistant", "content": full_reply})
 
-        except ollama.ResponseError as e:
-            st.error(f"Ollama Error ({e.status_code}): {e.error}")
-        except Exception as e:
-            st.error(f"Failed to connect to Ollama at `{host_to_use}`: {str(e)}.\n\n"
-                     f"• If running locally: Ensure `ollama run llama3:8b` is active.\n"
-                     f"• If hosting on Streamlit Community Cloud: Add your remote Ollama endpoint to `st.secrets` (`OLLAMA_HOST`).")
+            except Exception as e:
+                # Seamless fallback to built-in documentation engine
+                st.caption("⚡ Serving response via built-in Deluge documentation engine:")
+                full_reply = st.write_stream(builtin_engine.stream_built_in_response(active_prompt))
+                st.session_state.assistant_messages.append({"role": "assistant", "content": full_reply})

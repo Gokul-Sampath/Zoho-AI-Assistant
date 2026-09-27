@@ -24,10 +24,13 @@ auth.init_auth_state()
 # Ensure Llama 3 8B is synchronized as active model
 if "llama3_params" in st.session_state:
     st.session_state.llama3_params["selected_model"] = DEFAULT_LLM_MODEL
-    # Check Streamlit Community Cloud secrets for remote Ollama host if available
+    # Check Streamlit Community Cloud secrets for remote Ollama host or standalone mode
     try:
-        if hasattr(st, "secrets") and "OLLAMA_HOST" in st.secrets:
-            st.session_state.llama3_params["ollama_host"] = st.secrets["OLLAMA_HOST"]
+        if hasattr(st, "secrets"):
+            if "OLLAMA_HOST" in st.secrets and st.secrets["OLLAMA_HOST"]:
+                st.session_state.llama3_params["ollama_host"] = st.secrets["OLLAMA_HOST"]
+            if "STANDALONE_MODE" in st.secrets:
+                st.session_state.llama3_params["standalone_mode"] = bool(st.secrets["STANDALONE_MODE"])
     except Exception:
         pass
 
@@ -279,12 +282,22 @@ with st.sidebar:
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Active Language Model Badge
+    # Active Intelligence Engine Badge
+    standalone = False
+    try:
+        if hasattr(st, "secrets") and st.secrets.get("STANDALONE_MODE", False):
+            standalone = True
+    except Exception:
+        pass
+
+    badge_title = "Built-in Deluge Engine" if standalone else "Llama 3 8B (llama3:8b)"
+    badge_subtitle = "Offline Documentation Grounded • Zero Lag" if standalone else "Optimized • Low Latency & Minimal Lag"
+
     st.markdown(
         f"<div style='border: 1px solid #334155; background: #0f172a; border-radius: 6px; padding: 8px 10px; margin-top: 10px; margin-bottom: 6px;'>"
-        f"<div style='font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;'>Main Language Model</div>"
-        f"<div style='font-size: 0.95rem; font-weight: 700; color: #38bdf8;'>⚡ Llama 3 8B (llama3:8b)</div>"
-        f"<div style='font-size: 0.72rem; color: #94a3b8;'>Optimized • Low Latency & Minimal Lag</div>"
+        f"<div style='font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;'>Active Intelligence Engine</div>"
+        f"<div style='font-size: 0.95rem; font-weight: 700; color: #38bdf8;'>⚡ {badge_title}</div>"
+        f"<div style='font-size: 0.72rem; color: #94a3b8;'>{badge_subtitle}</div>"
         f"</div>",
         unsafe_allow_html=True
     )
