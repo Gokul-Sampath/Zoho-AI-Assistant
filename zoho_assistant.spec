@@ -26,12 +26,17 @@ metadata_datas = (
 # Project local files & directories
 project_datas = [
     (os.path.join(BASE_DIR, 'App.py'), '.'),
+    (os.path.join(BASE_DIR, 'auth.py'), '.'),
+    (os.path.join(BASE_DIR, 'builtin_engine.py'), '.'),
     (os.path.join(BASE_DIR, 'views'), 'views'),
     (os.path.join(BASE_DIR, 'data'), 'data'),
     (os.path.join(BASE_DIR, 'scraper_manager.py'), '.'),
     (os.path.join(BASE_DIR, 'vector_setup.py'), '.'),
     (os.path.join(BASE_DIR, 'crawl_zoho_docs.py'), '.'),
 ]
+
+if os.path.exists(os.path.join(BASE_DIR, '.streamlit')):
+    project_datas.append((os.path.join(BASE_DIR, '.streamlit'), '.streamlit'))
 
 for cfg_name in ['execution_history.json', 'schedule_config.json']:
     cfg_path = os.path.join(BASE_DIR, cfg_name)
@@ -40,30 +45,25 @@ for cfg_name in ['execution_history.json', 'schedule_config.json']:
 
 all_datas = streamlit_datas + chromadb_datas + metadata_datas + project_datas
 
-# Hidden imports required by dynamic Streamlit and ChromaDB loaders
-hidden_imports = [
-    'streamlit',
-    'streamlit.web.cli',
-    'streamlit.web.bootstrap',
-    'streamlit.runtime.scriptrunner.magic_expressions',
-    'streamlit.elements',
-    'streamlit.components.v1',
-    'altair',
-    'altair.vegalite.v5.api',
-    'tornado',
-    'pandas',
-    'pydeck',
-    'chromadb',
-    'chromadb.api.rust',
-    'chromadb.telemetry.product.posthog',
-    'chromadb.db.impl.sqlite',
-    'chromadb.utils.embedding_functions',
-    'ollama',
-    'requests',
-    'scraper_manager',
-    'vector_setup',
-    'crawl_zoho_docs',
-]
+# Hidden imports dynamically collected from installed Streamlit and ChromaDB
+hidden_imports = (
+    collect_submodules('streamlit') +
+    collect_submodules('chromadb') +
+    [
+        'altair',
+        'altair.vegalite.v5.api',
+        'tornado',
+        'pandas',
+        'pydeck',
+        'ollama',
+        'requests',
+        'auth',
+        'builtin_engine',
+        'scraper_manager',
+        'vector_setup',
+        'crawl_zoho_docs',
+    ]
+)
 
 a = Analysis(
     [os.path.join(BASE_DIR, 'launcher.py')],

@@ -92,6 +92,7 @@ def main():
         "--global.developmentMode=false",
         "--server.enableCORS=false",
         "--server.enableXsrfProtection=false",
+        "--runner.magicEnabled=false",
     ]
 
     try:
