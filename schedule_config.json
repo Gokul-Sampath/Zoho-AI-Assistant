@@ -1,0 +1,12 @@
+{
+  "enabled": false,
+  "frequency": "Daily",
+  "time_of_day": "02:00",
+  "custom_interval_hours": 12,
+  "deep_crawl": true,
+  "max_pages": 0,
+  "target_url": "https://www.zoho.com/deluge/help/",
+  "output_filename": "zoho_deluge_scheduled.md",
+  "last_run": null,
+  "next_run": null
+}

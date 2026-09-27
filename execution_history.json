@@ -1,0 +1,30 @@
+[
+  {
+    "id": "run-full-deep-01",
+    "timestamp": "2026-09-27 14:59:15",
+    "trigger_type": "Manual (CLI --deep)",
+    "target_url": "https://www.zoho.com/deluge/help/",
+    "output_file": "data/zoho_deluge_all_docs.md",
+    "deep_crawl": true,
+    "max_pages": 0,
+    "status": "Success",
+    "pages_crawled": 741,
+    "file_size_kb": 55037.6,
+    "duration_seconds": 1420.5,
+    "log": "Full deep crawl completed successfully. Extracted all Deluge documentation subpages into 55037.6 KB dataset."
+  },
+  {
+    "id": "run-initial-01",
+    "timestamp": "2026-09-27 13:58:15",
+    "trigger_type": "Manual (CLI)",
+    "target_url": "https://www.zoho.com/deluge/help/",
+    "output_file": "zoho_deluge_docs.md",
+    "deep_crawl": false,
+    "max_pages": 0,
+    "status": "Success",
+    "pages_crawled": 1,
+    "file_size_kb": 103.2,
+    "duration_seconds": 2.27,
+    "log": "Successfully extracted canonical Zoho Deluge documentation overview (103,914 chars)."
+  }
+]

@@ -1,0 +1,49 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# C extensions
+*.obj
+*.exe
+*.pyd
+*.dll
+
+# PyInstaller / Build Artifacts
+build/
+dist/
+*.spec
+
+# Vector Database (Local ChromaDB storage contains >380MB binary SQLite/index files)
+# Vector DB can be generated locally on-demand via vector_setup.py or the Admin panel
+chroma_db/
+*.sqlite3
+
+# Environment and Virtual Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Streamlit Local Secrets & Cache
+.streamlit/secrets.toml
+.streamlit/*.pyc
+
+# IDE / Operating System artifacts
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary data / Scratch / Logs
+*.log
+scratch/
+tmp/
